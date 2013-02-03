@@ -6,7 +6,20 @@ public class HugeInteger implements Comparable<HugeInteger>{
     private ArrayList<Integer> myArray; 
 
 
-    //Constructor Function
+    //Constructor Function for accepting ArrayLists
+
+    public HugeInteger(ArrayList<Integer> a){
+        while(a.get(a.size() - 1) == 0 && a.size() > 1){
+            a.remove(a.size()-1);
+        }
+
+
+        myArray = new ArrayList<Integer>(a);
+
+    }
+
+    //Constructor for accepting Strings
+
     public HugeInteger(String s){
         if (s == null || s.isEmpty()){
             s="0";
@@ -36,11 +49,10 @@ public class HugeInteger implements Comparable<HugeInteger>{
             return -1;
         }else{ //Case: Same Size
             for (int i=this.totalNum() - 1;i>=0; i--){
+                DIGIT_OPERATIONS++;
                 if (this.getDigit(i) > h.getDigit(i)){
-                    DIGIT_OPERATIONS++;
                     return 1;
                 }else if (this.getDigit(i) < h.getDigit(i)){
-                    DIGIT_OPERATIONS++;
                     return -1;
                 }
             }
@@ -55,9 +67,11 @@ public class HugeInteger implements Comparable<HugeInteger>{
     
     //Method for adding this and h using 'school formula' 
     public HugeInteger add(HugeInteger h){
-        StringBuilder ans = new StringBuilder(); 
+        ArrayList<Integer> ans = new ArrayList<Integer>(); 
         int n;
         int carryMe = 0;
+        int holder;
+
         if (this.totalNum()>=h.totalNum()){
             n = this.totalNum();
         }else{
@@ -65,31 +79,36 @@ public class HugeInteger implements Comparable<HugeInteger>{
         }
         
         for (int i=0;i<n;i++){
-            int holder;
             holder = this.getDigit(i) + h.getDigit(i) + carryMe;
             DIGIT_OPERATIONS++;
-            if ((holder >= 10) && (i!=n-1)){
-                ans.insert(0,holder-10);
+            if ((holder >= 10) && (i != n-1)){
+                ans.add(holder-10);
                 DIGIT_OPERATIONS++;
                 carryMe = 1;
+            }else if ((i == n-1) && (holder >= 10)){
+                ans.add(holder-10);
+                DIGIT_OPERATIONS++;
+                ans.add(1);
             }else{
-                ans.insert(0,holder);
+                ans.add(holder);
                 carryMe = 0;
             }
-        }
+                    
+            holder = 0;
         
-        return new HugeInteger(ans.toString());
+        } 
+        return new HugeInteger(ans);
 
        
     }
 
     //Method for subtracting this and h using 'school forumla' (assumes this is larger than h)
     public HugeInteger subtract(HugeInteger h){
-        StringBuilder ans = new StringBuilder();
+        ArrayList<Integer> ans = new ArrayList<Integer>();
         int borrowMe = 0;
-        
+        int holder;
+
         for (int i=0;i<this.totalNum();i++){
-            int holder;
             if (borrowMe == 1){
                 holder = this.getDigit(i)- 1;
             }else{
@@ -106,9 +125,10 @@ public class HugeInteger implements Comparable<HugeInteger>{
                 DIGIT_OPERATIONS++;
                 borrowMe = 0;
             }
-            ans.insert(0,holder);
+            ans.add(holder);
+            holder = 0;
         }
-        return new HugeInteger(ans.toString());
+        return new HugeInteger(ans);
     }  
    
     //Method for multiplying this and h using 'school formula' (carry method)
@@ -116,22 +136,23 @@ public class HugeInteger implements Comparable<HugeInteger>{
         //Set up accumlator, carry, and placeHolder
         HugeInteger accumulator= new HugeInteger("0");
         HugeInteger placeHolder = new HugeInteger("0");
+        ArrayList<Integer> ans = new ArrayList<Integer>();
+        int holder;
 
         //starting with first number of h
         for (int i=0;i<h.totalNum();i++){
             //Makes/resets string for holding temporary answer and for carryMe
-            StringBuilder ans = new StringBuilder();
             int carryMe = 0;
             
             //Pads with 0's
             for (int j=0;j!=i;j++){
-                ans.append(0);
+                ans.add(0);
             }
 
             //Grabs first number of this and does all the single-digit multiplications
             for (int j=0;j<this.totalNum();j++){
                  
-                int holder = (h.getDigit(i) * this.getDigit(j))+carryMe;
+                holder = (h.getDigit(i) * this.getDigit(j))+carryMe;
                 DIGIT_OPERATIONS++;
 
                 //Keeps track of how many digits to carry over to the next step of the problem
@@ -139,16 +160,20 @@ public class HugeInteger implements Comparable<HugeInteger>{
                 DIGIT_OPERATIONS++;
 
                 //If it's not the last digit, it chops off the tens-place
-                if (j != (this.totalNum()-1)){
-                    holder %= 10;
-                    DIGIT_OPERATIONS++;
-                }
+                holder %= 10;
+                DIGIT_OPERATIONS++;
+                
 
                 //Keeps track of the answer
-                ans.insert(0,holder);
-                if (j == (this.totalNum() - 1)){
-                    placeHolder = new HugeInteger(ans.toString());
-                }
+                ans.add(holder);
+                holder = 0;
+
+                if (j == this.totalNum() -1){
+                    ans.add(carryMe);
+                    placeHolder = new HugeInteger(ans);
+                    ans.clear();
+               }
+                
 
             }
 
@@ -193,18 +218,20 @@ public class HugeInteger implements Comparable<HugeInteger>{
         HugeInteger middleTerm = abcd.subtract(ac).subtract(bd);
 
         //Tack on zeros to ac and middle term
-        StringBuilder temp1 = new StringBuilder(ac.toString());
-        StringBuilder temp2 = new StringBuilder(middleTerm.toString());
-        
+        ArrayList<Integer> temp1 = new ArrayList<Integer>();
+        ArrayList<Integer> temp2 = new ArrayList<Integer>();
+
         for (int i = 0; i<(2*mid);i++){
-            temp1.append('0');
+            temp1.add(0);
         }
         for (int i = 0; i<mid;i++){
-            temp2.append('0');
+            temp2.add(0);
         }
+        temp1.addAll(ac.myArray);
+        temp2.addAll(middleTerm.myArray);
 
-        HugeInteger front = new HugeInteger(temp1.toString()); // ac*10^n
-        HugeInteger middle = new HugeInteger(temp2.toString()); //[(a+b)*(c+d) - ac - bd] * 10^n/2
+        HugeInteger front = new HugeInteger(temp1); // ac*10^n
+        HugeInteger middle = new HugeInteger(temp2); //[(a+b)*(c+d) - ac - bd] * 10^n/2
 
         return front.add(middle).add(bd); // ac*10^n + [(a+b)*(c+d) - ac - bd]*10^n/2 - bd 
 
